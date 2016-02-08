@@ -13,6 +13,7 @@ export default function(xScale) {
     xScale = xScale || d3.scale.linear();
 
     var margin = { bottom: 20 },
+        barHeight = 0.5, // percentage
         xLabel = '',
         xBaseline = null,
         chartLabel = '',
@@ -130,9 +131,9 @@ export default function(xScale) {
             measures.enter()
                 .append('rect')
                 .attr('class', 'measure')
-                .attr('y', plotAreaHeight * 0.15)
+                .attr('y', plotAreaHeight * (barHeight / 2))
                 .attr('width', xScale)
-                .attr('height', plotAreaHeight * 0.7)
+                .attr('height', plotAreaHeight * barHeight)
                 .attr('fill', function(d, i) { return ['lightsteelblue', 'steelblue'][i]; })
                 .attr('stroke', function(d, i) { return ['lightsteelblue', 'steelblue'][i]; });
 
@@ -144,8 +145,8 @@ export default function(xScale) {
                 .attr('class', 'marker')
                 .attr('x1', xScale)
                 .attr('x2', xScale)
-                .attr('y1', function() { return plotAreaHeight * 0.15; })
-                .attr('y2', function() { return plotAreaHeight * 0.85; })
+                .attr('y1', function() { return plotAreaHeight * (barHeight / 2); })
+                .attr('y2', function() { return plotAreaHeight * (barHeight * 1.5); })
                 .attr('stroke', 'black')
                 .attr('stroke-width', 3);
 
@@ -217,6 +218,14 @@ export default function(xScale) {
         }
         decorate = x;
         return bullet;
+    };
+
+    bullet.barHeight = function(x) {
+        if(!arguments.length) {
+            return barHeight    ;
+        }
+        barHeight = x;
+        return barHeight;
     };
 
     return bullet;
