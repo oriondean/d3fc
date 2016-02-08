@@ -8,14 +8,11 @@ import {noop} from '../util/fn';
 import {rebindAll, rebind} from '../util/rebind';
 import {isOrdinal, range, setRange} from '../util/scale';
 
-export default function(xScale, yScale) {
+export default function(xScale) {
 
     xScale = xScale || d3.scale.linear();
-    yScale = yScale || d3.scale.linear();
 
-    var margin = {
-            bottom: 30
-        },
+    var margin = { bottom: 20 },
         xLabel = '',
         xBaseline = null,
         chartLabel = '',
@@ -27,20 +24,12 @@ export default function(xScale, yScale) {
     // it is transformed via the respective scale.
     var xAxis = axis()
         .orient('bottom')
-        .baseline(function() {
-            if (xBaseline !== null) {
-                return yScale(xBaseline.apply(this, arguments));
-            } else {
-                var r = range(yScale);
-                return xAxis.orient() === 'bottom' ? r[0] : r[1];
-            }
-        });
+        .baseline(function() { return 50; }); // 2do: fix this hack
 
     var containerDataJoin = dataJoin()
         .selector('svg.cartesian-chart')
         .element('svg')
         .attr({'class': 'cartesian-chart', 'layout-style': 'flex: 1'});
-
 
     var bullet = function(selection) {
 
@@ -114,8 +103,8 @@ export default function(xScale, yScale) {
 
             // set the axis ranges
             var plotAreaContainer = svg.select('.plot-area');
+            var plotAreaHeight = plotAreaContainer.layout('height');
             setRange(xScale, [0, plotAreaContainer.layout('width')]);
-            setRange(yScale, [plotAreaContainer.layout('height'), 0]);
 
             // render the axes
             xAxis.xScale(xScale)
@@ -130,9 +119,8 @@ export default function(xScale, yScale) {
             bands.enter()
                 .append('rect')
                 .attr('class', 'band')
-                .attr('y', 10) //2do: would have to add to x if vertical
                 .attr('width', xScale)
-                .attr('height', 40)
+                .attr('height', plotAreaHeight)
                 .attr('fill', function(d, i) { return ['#EEE', '#DDD', '#CCC', '#BBB', '#AAA'][i]; })
                 .attr('stroke', function(d, i) { return ['#EEE', '#DDD', '#CCC', '#BBB', '#AAA'][i]; });
 
@@ -142,9 +130,9 @@ export default function(xScale, yScale) {
             measures.enter()
                 .append('rect')
                 .attr('class', 'measure')
-                .attr('y', 20) // 2do: remove hardcoded number
+                .attr('y', plotAreaHeight * 0.15)
                 .attr('width', xScale)
-                .attr('height', 20)
+                .attr('height', plotAreaHeight * 0.7)
                 .attr('fill', function(d, i) { return ['lightsteelblue', 'steelblue'][i]; })
                 .attr('stroke', function(d, i) { return ['lightsteelblue', 'steelblue'][i]; });
 
@@ -156,8 +144,8 @@ export default function(xScale, yScale) {
                 .attr('class', 'marker')
                 .attr('x1', xScale)
                 .attr('x2', xScale)
-                .attr('y1', function() { return yScale(0) - 15; })
-                .attr('y2', function() { return yScale(0) + 5; })
+                .attr('y1', function() { return plotAreaHeight * 0.15; })
+                .attr('y2', function() { return plotAreaHeight * 0.85; })
                 .attr('stroke', 'black')
                 .attr('stroke-width', 3);
 
@@ -186,12 +174,10 @@ export default function(xScale, yScale) {
     }
 
     rebindScale(xScale, 'x');
-    rebindScale(yScale, 'y');
-
 
     var axisExclusions = [
         'baseline',         // the axis baseline is adapted so is not exposed directly
-        'xScale', 'yScale'  // these are set by this components
+        'xScale'    // set by components
     ];
     rebindAll(bullet, xAxis, 'x', axisExclusions);
 
