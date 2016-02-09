@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>d3fc</title>
+    <meta name="description" content="A collection of components that make it easy to build interactive charts with D3.">
+
+    <script src="https://d3fc.io/scripts.js"></script>
+
+    <link rel="icon" type="image/png" href="https://d3fc.io/images/favicon-16x16.png" sizes="16x16">
+    <link rel="icon" type="image/png" href="https://d3fc.io/images/favicon-32x32.png" sizes="32x32">
+    <link rel="icon" type="image/png" href="https://d3fc.io/images/favicon-96x96.png" sizes="96x96">
+    <link rel="stylesheet" href="https://d3fc.io/styles.css" />
+    <link rel="canonical" href="https://d3fc.io\index.html" />
+  </head>
+  <body>
+    <div class="content">
+
+      <nav class="navbar navbar-inverse">
+        <div class="container">
+            <div class="navbar-header">
+              <a href="https://d3fc.io/"><img class="navbar-logo" alt="d3fc" src="https://d3fc.io/images/logo.svg" /></a>
+              <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+              </button>
+              </div>
+            <div class="navbar-collapse collapse">
+              <ul class="nav navbar-nav navbar-right">
+                <li class=""><a href="https://d3fc.io/components/introduction/getting-started.html">Documentation</a></li>
+                <li class=""><a href="https://d3fc.io/examples">Examples</a></li>
+                <li><a href="https://github.com/ScottLogic/d3fc">GitHub</a></li>
+              </ul>
+            </div>
+        </div>
+      </nav>
+
+      
+<div class="jumbotron text-center" id="jumbo1">
+    <img alt="d3fc" src="https://d3fc.io/images/logo.svg"/>
+    <p>A collection of components that make it easy to build interactive charts with D3.</p>
+    <a class="jumbotron-btn" href="https://github.com/ScottLogic/d3fc">View on GitHub</a>
+</div>
+
+<div class="top-chart container">
+    <div class="row">
+        <div class="col-md-6">
+            <style>
+                {
+                {
+                    stacked-css
+                }
+                }
+            </style>
+            /examples/stacked/stacked.html
+            <script>
+                function renderStacked() {
+                    {
+                        {
+                            {
+                                stacked - js
+                            }
+                        }
+                    }
+                }
+            </script>
+        </div>
+        <div class="col-md-6">
+            <style>
+                {
+                {
+                    bubble-css
+                }
+                }
+            </style>
+            /examples/bubble/bubble.html
+            <script>
+                function renderBubble() {
+                    {
+                        {
+                            {
+                                bubble - js
+                            }
+                        }
+                    }
+                }
+            </script>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-6">
+            <style>
+                {
+                {
+                    simple-css
+                }
+                }
+            </style>
+            /examples/simple/simple.html
+            <script>
+                function renderSimple() {
+                    {
+                        {
+                            {
+                                simple - js
+                            }
+                        }
+                    }
+                }
+            </script>
+        </div>
+        <div class="col-md-6">
+            <style>
+                {
+                {
+                    streaming-css
+                }
+                }
+            </style>
+            /examples/streaming/streaming.html
+            <script>
+                function renderStreaming() {
+                    {
+                        {
+                            {
+                                streaming - js
+                            }
+                        }
+                    }
+                    return intervalId;
+                }
+            </script>
+        </div>
+    </div>
+</div>
+
+<script>
+    var intervalId;
+    function renderExamples() {
+        renderStacked();
+        renderBubble();
+        renderSimple();
+        if (intervalId) {
+            window.clearInterval(intervalId);
+        }
+        intervalId = renderStreaming();
+    }
+    window.onresize = fc.util.render(renderExamples);
+    renderExamples();
+</script>
+
+<div id="quick-start" class="quick-start">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12">
+                <h1 class="text-center">QUICK START</h1>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-sm-3 ">
+                <h3>Install</h3>
+                <p>A complete set of instructions for obtaining d3fc and its dependencies via npm are available in the
+                    <a href="components/introduction/getting-started.html">Getting Started Guide</a>.</p>
+            </div>
+            <div class="col-sm-3 ">
+                <h3>Learn</h3>
+                <p>Browse the d3fc components to determine which you need in order to build your chart. You can mix and
+                    match with any D3 code you may require to produce your chart.</p>
+            </div>
+            <div class="col-sm-3 ">
+                <h3>Customise</h3>
+                <p>The components are customised via CSS, allowing you to change colors, stroke, fill and layout.
+                    However for deeper customisation all the components support the <a
+                            href="components/introduction/decorate-pattern.html">decorate pattern</a>.</p>
+            </div>
+            <div class="col-sm-3 ">
+                <h3>Contribute</h3>
+                <p>Spotted a bug? Have an idea for a feature? Please <a href="https://github.com/ScottLogic/d3fc">pop over to
+                    GitHub and contribute</a>. If you want to contribute a new component, please read
+                    over <a href="components/introduction/component-design.html">this page which describes the design
+                        goals</a>.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+    </div>
+    <footer>
+      <div class="container">
+        <p class="muted credit text-center">Project supported by <a href="http://www.scottlogic.com">Scott Logic</a>.</p>
+        <p class="muted credit text-center">Browser testing provided by <a class="browserstack" href="https://browserstack.com">BrowserStack</a>.</p>
+      </div>
+    </footer>
+
+  </body>
+</html>
