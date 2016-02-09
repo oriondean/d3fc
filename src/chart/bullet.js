@@ -8,38 +8,55 @@ import {noop} from '../util/fn';
 import {rebindAll, rebind} from '../util/rebind';
 import {isOrdinal, range, setRange} from '../util/scale';
 
-export default function(xScale) {
+export default function() {
 
-    xScale = xScale || d3.scale.linear();
-
-    var margin = { bottom: 20 },
+    var margin = { top: 0, right: 15, bottom: 30, left: 15 },
+        padding = 0,
         barHeight = 0.5, // percentage
-        xLabel = '',
-        xBaseline = null,
-        chartLabel = '',
-        decorate = noop;
+        axisLabels = [],
+        chartLabels = [],
+        decorate = noop,
+        scales = [],
+        domains = [];
 
-    // Each axis-series has a cross-scale which is defined as an identity
-    // scale. If no baseline function is supplied, the axis is positioned
-    // using the cross-scale range extents. If a baseline function is supplied
-    // it is transformed via the respective scale.
-    var xAxis = axis()
-        .orient('bottom')
-        .baseline(function() { return 50; }); // 2do: fix this hack
-
-    var containerDataJoin = dataJoin()
-        .selector('svg.cartesian-chart')
-        .element('svg')
-        .attr({'class': 'cartesian-chart', 'layout-style': 'flex: 1'});
+    var chartDataJoin = dataJoin()
+        .selector('g.bullet-chart')
+        .element('g')
+        .attr('class', 'bullet-chart');
 
     var bullet = function(selection) {
+
+        selection.each(function(data) {
+            var container = d3.select(this);
+
+            var svg = container.selectAll('svg')
+                .data([data]);
+            svg.enter()
+                .append('svg')
+                .layout('flex', 1);
+
+            container.layout();
+
+            var chartContainer = chartDataJoin(svg, data);
+            var multipleHeight = svg.layout('height') / data.length - padding;
+
+            chartContainer.attr('transform', function(d, i) {
+                return 'translate(0, ' + (i * multipleHeight) + ')';
+            }).layout({ height: multipleHeight, width: svg.layout('width') });
+
+            container.layout();
+
+            chartContainer.call(plotBullet);
+        });
+    };
+
+    function plotBullet(selection) {
 
         selection.each(function(data, index) {
 
             var container = d3.select(this);
 
-            var svg = containerDataJoin(container, [data]);
-            svg.enter().html(
+            container.html(
                 '<g class="plot-area-container"> \
                     <rect class="background" \
                         layout-style="position: absolute; top: 0; bottom: 0; left: 0; right: 0"/> \
@@ -61,9 +78,18 @@ export default function(xScale) {
                     </g> \
                 </g>');
 
+            var xScale = d3.scale.linear()
+                .domain(domains[index])
+                .range([0, container.layout('width')]);
+
+            var xAxis = axis()
+                .orient('bottom')
+                .xScale(xScale)
+                .yScale(d3.scale.identity());
+
             var expandedMargin = expandRect(margin);
 
-            svg.select('.plot-area-container')
+            container.select('.plot-area-container')
                 .layout({
                     position: 'absolute',
                     top: expandedMargin.top,
@@ -72,7 +98,7 @@ export default function(xScale) {
                     right: expandedMargin.right
                 });
 
-            svg.select('.title')
+            container.select('.title')
                 .layout({
                     position: 'absolute',
                     top: 0,
@@ -88,7 +114,7 @@ export default function(xScale) {
                 alignItems: 'center'
             };
             xAxisLayout[xAxis.orient()] = 0;
-            svg.select('.x-axis.label-container')
+            container.select('.x-axis.label-container')
                 .attr('class', 'x-axis label-container ' + xAxis.orient())
                 .layout(xAxisLayout);
 
@@ -96,114 +122,73 @@ export default function(xScale) {
             container.layout();
 
             // update the label text
-            svg.select('.title .label')
-                .text(chartLabel);
+            container.select('.title .label')
+                .text(chartLabels[index]);
 
-            svg.select('.x-axis.label-container .label')
-                .text(xLabel);
+            container.select('.x-axis.label-container .label')
+                .text(axisLabels[index]);
 
-            // set the axis ranges
-            var plotAreaContainer = svg.select('.plot-area');
-            var plotAreaHeight = plotAreaContainer.layout('height');
-            setRange(xScale, [0, plotAreaContainer.layout('width')]);
+            var plotAreaContainer = container.select('.plot-area');
 
-            // render the axes
-            xAxis.xScale(xScale)
-                .yScale(d3.scale.identity());
+            xAxis.baseline(function() { return plotAreaContainer.layout('height'); });
 
-            svg.select('.axes-container .x-axis')
+            container.select('.axes-container .x-axis')
                 .call(xAxis);
 
             var bands = plotAreaContainer.selectAll('rect.band')
-                .data(data[0].bands);
+                .data(data.bands);
 
             bands.enter()
                 .append('rect')
                 .attr('class', 'band')
                 .attr('width', xScale)
-                .attr('height', plotAreaHeight)
-                .attr('fill', function(d, i) { return ['#EEE', '#DDD', '#CCC', '#BBB', '#AAA'][i]; })
-                .attr('stroke', function(d, i) { return ['#EEE', '#DDD', '#CCC', '#BBB', '#AAA'][i]; });
+                .attr('height', plotAreaContainer.layout('height'));
 
             var measures = plotAreaContainer.selectAll('rect.measure')
-                .data(data[0].measures);
+                .data(data.measures);
 
             measures.enter()
                 .append('rect')
                 .attr('class', 'measure')
-                .attr('y', plotAreaHeight * (barHeight / 2))
+                .attr('y', plotAreaContainer.layout('height') * (barHeight / 2))
                 .attr('width', xScale)
-                .attr('height', plotAreaHeight * barHeight)
-                .attr('fill', function(d, i) { return ['lightsteelblue', 'steelblue'][i]; })
-                .attr('stroke', function(d, i) { return ['lightsteelblue', 'steelblue'][i]; });
+                .attr('height', plotAreaContainer.layout('height') * barHeight);
 
             var markers = plotAreaContainer.selectAll('line.marker')
-                .data(data[0].markers);
+                .data(data.markers);
 
             markers.enter()
                 .append('line')
                 .attr('class', 'marker')
                 .attr('x1', xScale)
                 .attr('x2', xScale)
-                .attr('y1', function() { return plotAreaHeight * (barHeight / 2); })
-                .attr('y2', function() { return plotAreaHeight * (barHeight * 1.5); })
-                .attr('stroke', 'black')
-                .attr('stroke-width', 3);
+                .attr('y1', function() {
+                    return plotAreaContainer.layout('height') * (barHeight / 2);
+                })
+                .attr('y2', function() {
+                    return plotAreaContainer.layout('height') * (barHeight * 1.5);
+                });
 
-            decorate(svg, data, index);
+            decorate(container, data, index);
         });
-    };
-
-    function rebindScale(scale, prefix) {
-        var scaleExclusions = [
-            /range\w*/,   // the scale range is set via the component layout
-            /tickFormat/  // use axis.tickFormat instead (only present on linear scales)
-        ];
-
-        // The scale ticks method is a stateless method that returns (roughly) the number of ticks
-        // requested. This is subtley different from teh axis ticks methods that simple stores the given arguments
-        // for invocation of the scale method at some point in the future.
-        // Here we expose the underling scale ticks method in case the user want to generate their own ticks.
-        if (!isOrdinal(scale)) {
-            scaleExclusions.push('ticks');
-            var mappings = {};
-            mappings[prefix + 'ScaleTicks'] = 'ticks';
-            rebind(bullet, scale, mappings);
-        }
-
-        rebindAll(bullet, scale, prefix, scaleExclusions);
     }
 
-    rebindScale(xScale, 'x');
-
-    var axisExclusions = [
-        'baseline',         // the axis baseline is adapted so is not exposed directly
-        'xScale'    // set by components
-    ];
-    rebindAll(bullet, xAxis, 'x', axisExclusions);
-
-    bullet.xBaseline = function(x) {
+    bullet.axisLabels = function(x) {
         if (!arguments.length) {
-            return xBaseline;
+            return axisLabels;
         }
-        xBaseline = d3.functor(x);
+        axisLabels = x;
         return bullet;
     };
 
-    bullet.chartLabel = function(x) {
+    bullet.chartLabels = function(x) {
         if (!arguments.length) {
-            return chartLabel;
+            return chartLabels;
         }
-        chartLabel = x;
+        chartLabels = x;
         return bullet;
     };
-    bullet.xLabel = function(x) {
-        if (!arguments.length) {
-            return xLabel;
-        }
-        xLabel = x;
-        return bullet;
-    };
+
     bullet.margin = function(x) {
         if (!arguments.length) {
             return margin;
@@ -221,11 +206,27 @@ export default function(xScale) {
     };
 
     bullet.barHeight = function(x) {
-        if(!arguments.length) {
-            return barHeight    ;
+        if (!arguments.length) {
+            return barHeight;
         }
         barHeight = x;
-        return barHeight;
+        return bullet;
+    };
+
+    bullet.scales = function(x) {
+        if (!arguments.length) {
+            return scales;
+        }
+        scales = x;
+        return bullet;
+    };
+
+    bullet.domains = function(x) {
+        if (!arguments.length) {
+            return domains;
+        }
+        domains = x;
+        return bullet;
     };
 
     return bullet;
