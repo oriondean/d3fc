@@ -11,7 +11,6 @@ import {isOrdinal, range, setRange} from '../util/scale';
 export default function() {
 
     var margin = { top: 0, right: 15, bottom: 30, left: 15 },
-        padding = 0,
         barHeight = 0.5, // percentage
         axisLabels = [],
         chartLabels = [],
@@ -38,7 +37,7 @@ export default function() {
             container.layout();
 
             var chartContainer = chartDataJoin(svg, data);
-            var multipleHeight = svg.layout('height') / data.length - padding;
+            var multipleHeight = svg.layout('height') / data.length;
 
             chartContainer.attr('transform', function(d, i) {
                 return 'translate(0, ' + (i * multipleHeight) + ')';
