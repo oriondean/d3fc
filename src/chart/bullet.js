@@ -1,4 +1,3 @@
-import 'svg-innerhtml';
 import d3 from 'd3';
 import axis from '../series/axis';
 import '../layout/layout';
@@ -8,54 +7,35 @@ import {noop} from '../util/fn';
 import {rebindAll, rebind} from '../util/rebind';
 import {isOrdinal, range, setRange} from '../util/scale';
 
-export default function() {
+export default function(xScale) {
 
-    var margin = { top: 0, right: 15, bottom: 30, left: 15 },
+    xScale = xScale || d3.scale.linear();
+
+    var margin = { bottom: 20 },
         barHeight = 0.5, // percentage
-        axisLabels = [],
-        chartLabels = [],
         decorate = noop,
-        scales = [],
-        domains = [];
+        bands = [],
+        markers = [],
+        bandColors = d3.scale.category20c(),
+        chartLabel = '',
+        xLabel = '';
 
-    var chartDataJoin = dataJoin()
-        .selector('g.bullet-chart')
-        .element('g')
-        .attr('class', 'bullet-chart');
+    var xAxis = axis()
+        .orient('bottom');
+
+    var containerDataJoin = dataJoin()
+        .selector('svg.bullet-chart')
+        .element('svg')
+        .attr({'class': 'bullet-chart', 'layout-style': 'flex: 1'});
 
     var bullet = function(selection) {
-
-        selection.each(function(data) {
-            var container = d3.select(this);
-
-            var svg = container.selectAll('svg')
-                .data([data]);
-            svg.enter()
-                .append('svg')
-                .layout('flex', 1);
-
-            container.layout();
-
-            var chartContainer = chartDataJoin(svg, data);
-            var multipleHeight = svg.layout('height') / data.length;
-
-            chartContainer.attr('transform', function(d, i) {
-                return 'translate(0, ' + (i * multipleHeight) + ')';
-            }).layout({ height: multipleHeight, width: svg.layout('width') });
-
-            container.layout();
-
-            chartContainer.call(plotBullet);
-        });
-    };
-
-    function plotBullet(selection) {
 
         selection.each(function(data, index) {
 
             var container = d3.select(this);
 
-            container.html(
+            var svg = containerDataJoin(container, [data]);
+            svg.enter().html(
                 '<g class="plot-area-container"> \
                     <rect class="background" \
                         layout-style="position: absolute; top: 0; bottom: 0; left: 0; right: 0"/> \
@@ -77,18 +57,9 @@ export default function() {
                     </g> \
                 </g>');
 
-            var xScale = d3.scale.linear()
-                .domain(domains[index])
-                .range([0, container.layout('width')]);
-
-            var xAxis = axis()
-                .orient('bottom')
-                .xScale(xScale)
-                .yScale(d3.scale.identity());
-
             var expandedMargin = expandRect(margin);
 
-            container.select('.plot-area-container')
+            svg.select('.plot-area-container')
                 .layout({
                     position: 'absolute',
                     top: expandedMargin.top,
@@ -97,7 +68,7 @@ export default function() {
                     right: expandedMargin.right
                 });
 
-            container.select('.title')
+            svg.select('.title')
                 .layout({
                     position: 'absolute',
                     top: 0,
@@ -120,79 +91,112 @@ export default function() {
             // perform the flexbox / css layout
             container.layout();
 
-            // update the label text
-            container.select('.title .label')
-                .text(chartLabels[index]);
+            svg.select('.title .label')
+                .text(chartLabel);
 
-            container.select('.x-axis.label-container .label')
-                .text(axisLabels[index]);
+            svg.select('.x-axis.label-container .label')
+                .text(xLabel);
 
-            var plotAreaContainer = container.select('.plot-area');
+            // set the axis ranges
+            var plotAreaContainer = svg.select('.plot-area');
+            setRange(xScale, [0, plotAreaContainer.layout('width')]);
 
-            xAxis.baseline(function() { return plotAreaContainer.layout('height'); });
+            // render the axes
+            xAxis.xScale(xScale)
+                .yScale(d3.scale.identity())
+                .baseline(function() { return plotAreaContainer.layout('height'); });
 
-            container.select('.axes-container .x-axis')
+            svg.select('.axes-container .x-axis')
                 .call(xAxis);
 
-            var bands = plotAreaContainer.selectAll('rect.band')
-                .data(data.bands);
+            // render the plot area
+            var containerHeight = plotAreaContainer.layout('height'),
+                itemBaseline = containerHeight * barHeight / 2,
+                barHeightPx = barHeight * containerHeight,
+                colors = function(d, i) { return bandColors(i); };
 
-            bands.enter()
+            var band = plotAreaContainer.selectAll('rect.band')
+                .data(bands);
+
+            band.enter()
                 .append('rect')
-                .attr('class', 'band')
-                .attr('width', xScale)
-                .attr('height', plotAreaContainer.layout('height'));
+                .attr({ class: 'band', width: xScale, height: containerHeight, fill: colors, stroke: colors });
 
-            var measures = plotAreaContainer.selectAll('rect.measure')
-                .data(data.measures);
+            var measure = plotAreaContainer.selectAll('rect.measure')
+                .data([data]);
 
-            measures.enter()
+            measure.enter()
                 .append('rect')
-                .attr('class', 'measure')
-                .attr('y', plotAreaContainer.layout('height') * (barHeight / 2))
-                .attr('width', xScale)
-                .attr('height', plotAreaContainer.layout('height') * barHeight);
+                .attr({class: 'measure', y: itemBaseline, width: xScale, height: barHeightPx });
 
-            var markers = plotAreaContainer.selectAll('line.marker')
-                .data(data.markers);
+            var marker = plotAreaContainer.selectAll('line.marker')
+                .data(markers);
 
-            markers.enter()
+            marker.enter()
                 .append('line')
-                .attr('class', 'marker')
-                .attr('x1', xScale)
-                .attr('x2', xScale)
-                .attr('y1', function() {
-                    return plotAreaContainer.layout('height') * (barHeight / 2);
-                })
-                .attr('y2', function() {
-                    return plotAreaContainer.layout('height') * (barHeight * 1.5);
-                });
+                .attr({ class: 'marker', x1: xScale, x2: xScale, y1: itemBaseline, y2: itemBaseline + barHeightPx });
 
-            decorate(container, data, index);
+            decorate(svg, data, index);
         });
+    };
+
+    function rebindScale(scale, prefix) {
+        var scaleExclusions = [
+            /range\w*/,   // the scale range is set via the component layout
+            /tickFormat/  // use axis.tickFormat instead (only present on linear scales)
+        ];
+
+        // The scale ticks method is a stateless method that returns (roughly) the number of ticks
+        // requested. This is subtly different from the axis ticks methods that simply stores the given arguments
+        // for invocation of the scale method at some point in the future.
+        // Here we expose the underlying scale ticks method in case the user want to generate their own ticks.
+        if (!isOrdinal(scale)) {
+            scaleExclusions.push('ticks');
+            var mappings = {};
+            mappings[prefix + 'ScaleTicks'] = 'ticks';
+            rebind(bullet, scale, mappings);
+        }
+
+        rebindAll(bullet, scale, prefix, scaleExclusions);
     }
 
-    bullet.axisLabels = function(x) {
+    rebindScale(xScale, 'x');
+
+    var axisExclusions = [
+        'baseline',         // the axis baseline is adapted so is not exposed directly
+        'xScale' // set by components
+    ];
+    rebindAll(bullet, xAxis, 'x', axisExclusions);
+
+    bullet.bands = function(x) {
         if (!arguments.length) {
-            return axisLabels;
+            return bands;
         }
-        axisLabels = x;
+        bands = x;
         return bullet;
     };
 
-    bullet.chartLabels = function(x) {
+    bullet.markers = function(x) {
         if (!arguments.length) {
-            return chartLabels;
+            return markers;
         }
-        chartLabels = x;
+        markers = x;
         return bullet;
     };
 
-    bullet.margin = function(x) {
+    bullet.chartLabel = function(x) {
         if (!arguments.length) {
-            return margin;
+            return chartLabel;
         }
-        margin = x;
+        chartLabel = x;
+        return bullet;
+    };
+
+    bullet.xLabel = function(x) {
+        if (!arguments.length) {
+            return xLabel;
+        }
+        xLabel = x;
         return bullet;
     };
 
@@ -201,30 +205,6 @@ export default function() {
             return decorate;
         }
         decorate = x;
-        return bullet;
-    };
-
-    bullet.barHeight = function(x) {
-        if (!arguments.length) {
-            return barHeight;
-        }
-        barHeight = x;
-        return bullet;
-    };
-
-    bullet.scales = function(x) {
-        if (!arguments.length) {
-            return scales;
-        }
-        scales = x;
-        return bullet;
-    };
-
-    bullet.domains = function(x) {
-        if (!arguments.length) {
-            return domains;
-        }
-        domains = x;
         return bullet;
     };
 
