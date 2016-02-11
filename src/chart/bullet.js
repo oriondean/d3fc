@@ -14,9 +14,10 @@ export default function(xScale) {
     var margin = { right: 5, bottom: 20, left: 5 },
         barHeight = 0.33, // percentage
         decorate = noop,
-        bands = [],
-        markers = [],
-        bandColors = d3.scale.category20c(),
+        qualitativeRanges = [],
+        comparativeMeasures = [],
+        qualitativeRangeColors = function(d, i) { return d3.rgb('#E4E4E4').darker([i]); },
+        featureMeasureColors = d3.scale.category20c(),
         chartLabel = '',
         xLabel = '';
 
@@ -113,28 +114,30 @@ export default function(xScale) {
             var containerHeight = plotAreaContainer.layout('height'),
                 barHeightPx = barHeight * containerHeight,
                 itemBaseline = (containerHeight - barHeightPx) / 2;
-                colors = function(d, i) { return bandColors(i); };
 
-            var band = plotAreaContainer.selectAll('rect.band')
-                .data(bands);
+            var qualitativeRange = plotAreaContainer.selectAll('rect.qualitative-ranges')
+                .data(qualitativeRanges);
 
-            band.enter()
+            qualitativeRange.enter()
                 .append('rect')
-                .attr({ class: 'band', width: xScale, height: containerHeight, fill: colors, stroke: colors });
+                .attr({ class: 'qualitative-range', width: xScale, height: containerHeight,
+                    fill: qualitativeRangeColors, stroke: qualitativeRangeColors });
 
-            var measure = plotAreaContainer.selectAll('rect.measure')
-                .data([data]);
+            var featuredMeasure = plotAreaContainer.selectAll('rect.featured-measure')
+                .data(data);
 
-            measure.enter()
+            featuredMeasure.enter()
                 .append('rect')
-                .attr({class: 'measure', y: itemBaseline, width: xScale, height: barHeightPx });
+                .attr({class: 'featured-measure', y: itemBaseline, width: xScale, height: barHeightPx,
+                    fill: featureMeasureColors, stroke: featureMeasureColors });
 
-            var marker = plotAreaContainer.selectAll('line.marker')
-                .data(markers);
+            var comparativeMeasure = plotAreaContainer.selectAll('line.comparative-measure')
+                .data(comparativeMeasures);
 
-            marker.enter()
+            comparativeMeasure.enter()
                 .append('line')
-                .attr({ class: 'marker', x1: xScale, x2: xScale, y1: itemBaseline, y2: itemBaseline + barHeightPx });
+                .attr({ class: 'comparative-measure', x1: xScale, x2: xScale, y1: itemBaseline, y2: itemBaseline + barHeightPx,
+                    stroke: 'black' });
 
             decorate(svg, data, index);
         });
@@ -168,22 +171,20 @@ export default function(xScale) {
     ];
     rebindAll(bullet, xAxis, 'x', axisExclusions);
 
-    bullet.bands = function(x) {
+    bullet.qualitativeRanges = function(x) {
         if (!arguments.length) {
-            return bands;
+            return qualitativeRanges;
         }
-        bands = x;
+        qualitativeRanges = x.sort(d3.descending);
         return bullet;
     };
-
-    bullet.markers = function(x) {
+    bullet.comparativeMeasures = function(x) {
         if (!arguments.length) {
-            return markers;
+            return comparativeMeasures;
         }
-        markers = x;
+        comparativeMeasures = x.sort(d3.descending);
         return bullet;
     };
-
     bullet.chartLabel = function(x) {
         if (!arguments.length) {
             return chartLabel;
@@ -191,7 +192,6 @@ export default function(xScale) {
         chartLabel = x;
         return bullet;
     };
-
     bullet.xLabel = function(x) {
         if (!arguments.length) {
             return xLabel;
@@ -199,12 +199,18 @@ export default function(xScale) {
         xLabel = x;
         return bullet;
     };
-
     bullet.decorate = function(x) {
         if (!arguments.length) {
             return decorate;
         }
         decorate = x;
+        return bullet;
+    };
+    bullet.margin = function(x) {
+        if (!arguments.length) {
+            return margin;
+        }
+        margin = x;
         return bullet;
     };
 
