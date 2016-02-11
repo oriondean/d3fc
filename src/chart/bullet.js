@@ -11,7 +11,7 @@ export default function(xScale) {
 
     xScale = xScale || d3.scale.linear();
 
-    var margin = { bottom: 20 },
+    var margin = { right: 5, bottom: 20, left: 5 },
         barHeight = 0.5, // percentage
         decorate = noop,
         bands = [],
