@@ -12,7 +12,7 @@ export default function(xScale) {
     xScale = xScale || d3.scale.linear();
 
     var margin = { right: 5, bottom: 20, left: 5 },
-        barHeight = 0.5, // percentage
+        barHeight = 0.33, // percentage
         decorate = noop,
         bands = [],
         markers = [],
@@ -111,8 +111,8 @@ export default function(xScale) {
 
             // render the plot area
             var containerHeight = plotAreaContainer.layout('height'),
-                itemBaseline = containerHeight * barHeight / 2,
                 barHeightPx = barHeight * containerHeight,
+                itemBaseline = (containerHeight - barHeightPx) / 2;
                 colors = function(d, i) { return bandColors(i); };
 
             var band = plotAreaContainer.selectAll('rect.band')
