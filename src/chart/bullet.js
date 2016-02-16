@@ -11,7 +11,7 @@ export default function(xScale) {
 
     xScale = xScale || d3.scale.linear();
 
-    var margin = { right: 5, bottom: 20, left: 5 },
+    var margin = { right: 10, bottom: 20, left: 10 },
         barHeight = 0.33, // percentage
         decorate = noop,
         qualitativeRanges = [],
@@ -72,10 +72,8 @@ export default function(xScale) {
             svg.select('.title')
                 .layout({
                     position: 'absolute',
-                    top: 0,
-                    alignItems: 'center',
-                    left: expandedMargin.left,
-                    right: expandedMargin.right
+                    top: expandedMargin.top,
+                    bottom: expandedMargin.bottom
                 });
 
             var xAxisLayout = {
